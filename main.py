@@ -1,8 +1,12 @@
 import os
 import json
 from bson import json_util
+from bson import ObjectId 
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from datetime import datetime
+
+from pydantic import BaseModel
 
 from pymongo import MongoClient
 
@@ -15,23 +19,103 @@ try:
 
     client = MongoClient(url, serverSelectionTimeoutMS=5000)
     
-    # O comando 'ping' força uma conexão com o servidor para testar se está ativo
-    #client.admin.command('ping')
-    #print("Conexão com o MongoDB estabelecida com sucesso!")
-    
     db = client.get_database("desafio_fullstack")
 
 except ConnectionFailure:
     print("Não foi possível conectar ao servidor MongoDB.")
 
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
 @app.get("/voluntarios")
-async def voluntarios():
-    lista_voluntarios = list(db.voluntarios.find())
-    json_resultado = json.dumps(lista_voluntarios, default=json_util.default, indent=4)
-    return(json_resultado)
+async def buscar_voluntarios():
+    lista_voluntarios = db.voluntarios.find()
+    lista_voluntarios = list(lista_voluntarios)
+    resposta = []
+    for x in lista_voluntarios:
+        resposta.append(json.loads(json_util.dumps(x)))
 
+    return(resposta)
+
+@app.get("/voluntarios/{id}")
+async def buscar_voluntario_por_id(id: str):
+    
+    voluntario = db.voluntarios.find_one({"_id": ObjectId(id)})    
+
+    voluntario_json = json.loads(json_util.dumps(voluntario))
+    
+    return voluntario_json
+
+class Voluntario(BaseModel):
+    id:str | None = None
+    nome: str
+    email: str 
+    telefone: str
+    cargo: str
+    disponibilidade: str
+
+@app.post("/voluntarios")
+async def cadastrar_voluntario(voluntario: Voluntario):
+
+    dados_voluntario = voluntario.model_dump()
+    dados_voluntario["status"] = True
+    dados_voluntario["data_inscricao"] = datetime.now()
+
+    resultado = db.voluntarios.insert_one(dados_voluntario)
+
+    return {
+        "mensagem": "Voluntário cadastrado com sucesso!", 
+        "id_inserido":str(resultado),
+    }
+
+@app.post("/voluntarios")
+async def cadastrar_voluntario(voluntario: Voluntario):
+
+    dados_voluntario = voluntario.model_dump()
+    dados_voluntario["status"] = True
+    dados_voluntario["data_inscricao"] = datetime.now()
+
+    resultado = db.voluntarios.insert_one(dados_voluntario)
+
+    return {
+        "mensagem": "Voluntário cadastrado com sucesso!", 
+        "resultado":str(resultado),
+    }
+
+@app.put("/voluntarios")
+async def editar_voluntario(voluntario: Voluntario):
+
+    dados_voluntario = voluntario.model_dump()
+
+    id = dados_voluntario["id"]
+
+    if id == None:
+        return "Sem Id"
+
+    filter = { '_id': ObjectId(id)}
+    
+    newvalues = { "$set": dados_voluntario } 
+
+    resultado = db.voluntarios.update_one(filter, newvalues) 
+
+    return {
+        "mensagem": "Voluntário atualizado com sucesso!", 
+        "resultado":str(resultado),
+    }
+
+class Id(BaseModel):
+    id:str
+
+@app.delete("/voluntarios")
+async def deletar_voluntario(voluntario: Id):    
+    
+    id = voluntario.model_dump()["id"]
+
+    if id == None:
+        return "Sem Id"
+
+    filter = { '_id': ObjectId(id)}
+    resultado = db.voluntarios.delete_one(filter)
+
+    return {
+        "mensagem": "Voluntário atualizado com sucesso!", 
+        "resultado":str(resultado),
+    }
