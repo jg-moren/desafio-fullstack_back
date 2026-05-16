@@ -45,7 +45,6 @@ async def buscar_voluntario_por_id(id: str):
     return voluntario_json
 
 class Voluntario(BaseModel):
-    id:str | None = None
     nome: str
     email: str 
     telefone: str
@@ -66,26 +65,10 @@ async def cadastrar_voluntario(voluntario: Voluntario):
         "id_inserido":str(resultado),
     }
 
-@app.post("/voluntarios")
-async def cadastrar_voluntario(voluntario: Voluntario):
+@app.put("/voluntarios/{id}")
+async def editar_voluntario(id: str, voluntario: Voluntario):
 
     dados_voluntario = voluntario.model_dump()
-    dados_voluntario["status"] = True
-    dados_voluntario["data_inscricao"] = datetime.now()
-
-    resultado = db.voluntarios.insert_one(dados_voluntario)
-
-    return {
-        "mensagem": "Voluntário cadastrado com sucesso!", 
-        "resultado":str(resultado),
-    }
-
-@app.put("/voluntarios")
-async def editar_voluntario(voluntario: Voluntario):
-
-    dados_voluntario = voluntario.model_dump()
-
-    id = dados_voluntario["id"]
 
     if id == None:
         return "Sem Id"
@@ -101,16 +84,9 @@ async def editar_voluntario(voluntario: Voluntario):
         "resultado":str(resultado),
     }
 
-class Id(BaseModel):
-    id:str
 
-@app.delete("/voluntarios")
-async def deletar_voluntario(voluntario: Id):    
-    
-    id = voluntario.model_dump()["id"]
-
-    if id == None:
-        return "Sem Id"
+@app.delete("/voluntarios/{id}")
+async def deletar_voluntario(id: str):    
 
     filter = { '_id': ObjectId(id)}
     resultado = db.voluntarios.delete_one(filter)
