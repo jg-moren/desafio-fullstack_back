@@ -89,7 +89,10 @@ async def editar_voluntario(id: str, voluntario: Voluntario):
 async def deletar_voluntario(id: str):    
 
     filter = { '_id': ObjectId(id)}
-    resultado = db.voluntarios.delete_one(filter)
+
+    newvalues = { "$set": {"status" : False} } 
+
+    resultado = db.voluntarios.update_one(filter, newvalues) 
 
     return {
         "mensagem": "Voluntário atualizado com sucesso!", 
