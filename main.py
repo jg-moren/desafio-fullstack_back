@@ -108,6 +108,6 @@ async def deletar_voluntario(id: str):
     resultado = db.voluntarios.update_one(filter, newvalues) 
 
     return {
-        "mensagem": "Voluntário atualizado com sucesso!", 
+        "mensagem": "Voluntário deletado com sucesso!", 
         "resultado":str(resultado),
     }
