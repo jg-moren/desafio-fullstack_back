@@ -5,7 +5,7 @@ from bson import ObjectId
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from datetime import datetime
-
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from pymongo import MongoClient
@@ -13,6 +13,19 @@ from pymongo import MongoClient
 app = FastAPI()
 
 load_dotenv()
+
+origins = [
+    "http://localhost:5173",   
+]
+
+# 2. Adicione o middleware de CORS ao aplicativo
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,            # Permite os domínios da lista acima
+    allow_credentials=True,           # Permite cookies e cabeçalhos de autenticação
+    allow_methods=["*"],              # Permite todos os métodos HTTP (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],              # Permite todos os cabeçalhos HTTP (Content-Type, Authorization, etc.)
+)
 
 try:
     url = os.getenv("MONGODB_URL")
